@@ -1,0 +1,44 @@
+buildscript {
+    repositories {
+        jcenter()
+    }
+    dependencies {
+      classpath 'io.ratpack:ratpack-gradle:1.5.1'
+    }
+}
+
+plugins {
+    id 'com.gradle.build-scan' version '1.11'
+
+    id 'idea'
+}
+
+apply plugin: 'io.ratpack.ratpack-groovy'
+
+version = "${new File('VERSION').text}${project.hasProperty('patchVersion') ? '.' + patchVersion : '-SNAPSHOT'}"
+
+task wrapper(type: Wrapper) {
+    gradleVersion = '4.4.1'
+}
+
+repositories {
+    jcenter()
+    mavenCentral()
+}
+
+dependencies {
+    compile 'org.slf4j:slf4j-api:1.7.25'
+    compile 'ch.qos.logback:logback-classic:1.2.3'
+    compile 'io.logz.logback:logzio-logback-appender:1.0.11'
+}
+
+jar {
+    manifest {
+        attributes 'Implementation-Version': version
+    }
+}
+
+buildScan {
+    licenseAgreementUrl = 'https://gradle.com/terms-of-service'
+    licenseAgree = 'yes'
+}
