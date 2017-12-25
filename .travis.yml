@@ -1,21 +1,27 @@
 sudo: required
+
 language: java
+
 services:
 - docker
+
 before_cache:
 - rm -f  $HOME/.gradle/caches/modules-2/modules-2.lock
 - rm -fr $HOME/.gradle/caches/*/plugin-resolution/
+
 cache:
   directories:
   - "$HOME/.gradle/caches/"
   - "$HOME/.gradle/wrapper/"
+
 before_install:
-- openssl aes-256-cbc -K $encrypted_d4de6864fe57_key -iv $encrypted_d4de6864fe57_iv
-  -in deployment_keys.tar.enc -out deployment_keys.tar -d
+- openssl aes-256-cbc -K $encrypted_d4de6864fe57_key -iv $encrypted_d4de6864fe57_iv -in deployment_keys.tar.enc -out deployment_keys.tar -d
 - tar xvf deployment_keys.tar
 - chmod +x gradlew
+
 install:
 - "./gradlew build --scan -PpatchVersion=$TRAVIS_BUILD_NUMBER"
+
 before_script:
 - docker login -u="$DOCKER_USERNAME" -p="$DOCKER_PASSWORD"
 - eval "$(ssh-agent -s)"
@@ -23,18 +29,24 @@ before_script:
 - ssh-add deployment_keys/deploy_test
 - chmod 600 deployment_keys/deploy_prod
 - ssh-add deployment_keys/deploy_prod
+
 script:
 - export DOCKER_REPO=potic/potic-logger
-- export TAG=`if [ "$TRAVIS_BRANCH" == "master" ]; then echo "latest"; else echo $TRAVIS_BRANCH
-  | tr '/' '-' ; fi`
+- export TAG=`if [ "$TRAVIS_BRANCH" == "master" ]; then echo "latest"; else echo $TRAVIS_BRANCH | tr '/' '-' ; fi`
 - export TAG_VERSION=`cat VERSION`.$TRAVIS_BUILD_NUMBER
 - docker build -t $DOCKER_REPO:travis-$TRAVIS_BUILD_NUMBER .
 - docker tag $DOCKER_REPO:travis-$TRAVIS_BUILD_NUMBER $DOCKER_REPO:$TAG
 - docker tag $DOCKER_REPO:travis-$TRAVIS_BUILD_NUMBER $DOCKER_REPO:$TAG_VERSION
 - docker push $DOCKER_REPO
-- if [ "$TRAVIS_BRANCH" == "develop" ]; then ssh -o "StrictHostKeyChecking no" "$DEPLOY_TEST_USER"@"$DEPLOY_TEST_HOST"
-  TAG_TO_DEPLOY=$TAG_VERSION ENVIRONMENT_NAME=test 'bash -s' < src/deploy/deploy.sh;
-  fi
-- if [ "$TRAVIS_BRANCH" == "master" ]; then ssh -o "StrictHostKeyChecking no" "$DEPLOY_PROD_USER"@"$DEPLOY_PROD_HOST"
-  TAG_TO_DEPLOY=$TAG_VERSION ENVIRONMENT_NAME=prod 'bash -s' < src/deploy/deploy.sh;
-  fi
+- if [ "$TRAVIS_BRANCH" == "develop" ]; then ssh -o "StrictHostKeyChecking no" "$DEPLOY_TEST_USER"@"$DEPLOY_TEST_HOST" TAG_TO_DEPLOY=$TAG_VERSION ENVIRONMENT_NAME=test 'bash -s' < src/deploy/deploy.sh; fi
+- if [ "$TRAVIS_BRANCH" == "master" ]; then ssh -o "StrictHostKeyChecking no" "$DEPLOY_PROD_USER"@"$DEPLOY_PROD_HOST" TAG_TO_DEPLOY=$TAG_VERSION ENVIRONMENT_NAME=prod 'bash -s' < src/deploy/deploy.sh; fi
+
+env:
+  global:
+  - secure: GDaUF9ykYfgPVVaxtEGEJuk7TztNEPIxnRUTxtPvW+SQQbeKSWNsXnNJxRX4puaX4yjWCJi+MX7w0l8dFFcA1NAhsaVCnCEu0NSTHEFaLgGa+aoVh82DBnnpauMQyMC3LNf8nStxrwMudvEmWehpe39ZD/6dNpQlikMMkvaH7yFd7gnJ5g+wzpKiWrVnY2F1I3ODNy4yvG+8Fkb/9/XSGmy//0P5VZrZxjEo13A9mxX3CdNlI43Go/OLDiFHD5J7Uf37Govwfa16ivT4Mf2Q9/SK08lcpJ9WX1vwwKdJBgGiKv+rTlHnpD7dKu0e/wm6XdUnyjl9oTMv436hWOlLqJRWDWrUe9+GYsg7Gkns/E50HuXsIAm1YnqUFbDOGrRmmDC3CWVfobj3Y4QdTPOFUQ55fjInjZlXJmtVyGXNBk8RmAcAqGyqpoKRZanKgA5wa7mLKMqy4Mvjt/cwcB/xOVv7N3xma+o57K4Ih5jOZ3h9dzGpT5EppuoYUEWVv+PaM5Hc60Q9SxVUcIHsfYQq/KnoePPSlDyAsFw8ewu0Xk59lAtiacDXP+aR5YBSnxcGiNxBprPqtV++iFfusIJKICPWHxMO1m3B6i1cZZ41uCYEXqJEli4GbsQhA/ThMty5fSinBwaK9xWvpmy2NeTX/AIgZC4WGNtJ459/zoIoAug= # DOCKER_USERNAME
+  - secure: xCtivICvTxqRaMmVg3y3I3PSzJPEjVrGceLBBQKAQImnN9lSplpWic3z3SYouHxU5ax7Qmdv5WqaFwMQTN55K0t30UwosIiZpTThfxLmNoU0Jzx6Sk1zFJlxNWFHKyyP8+oXlmRg8/rseaoDcLgIGN0cn3xTRjYywrcthwwk24I+AAdCh5Z9vamhjEgYYlEoWcuPAKn3t8HAzl1J2wY3TPX6b+RakNnYDvcGvqc/O0Xf48PgXTj3p6cE2pWNInqc0zLXlz08zsunCrUxCi6BomTNxoI1itPx4vx8/yq8wV+Cp2O9TZGYqL9iPI0iD8m7SEBukH1AtdVpYFeqWAJpsySoaufSrmHb74wlrxZ6forLCOCWcb83HK5rl0MYcq6YgIyftmR4RxmbjaC91yW0RYjwtuXX6NO/yFcJxegtUTU/SXD8WBOJotKFbBnifyfUU7+ATYw0i+3RolEw2t/WcYklR6vQNEU8QHi4bgVkB//COZAMZDCvQcqkHOtmKT7Sr53A649WnTylzhv3NuUyp0XD/PE6DSgoht9AkP5G1OOcE5y5QfE+wW/cfq0ZVONp9CdklZsEV8sergYh2X986MGobpesfbZR6hgmfxfT/4m0zL1aw44R50+BPqoJQQ7QD1d/SAm45XBhkEqENlyfieOx0NuqYCzevwEOCYRXgaw= # DOCKER_PASSWORD
+  - secure: JRkgM8ojGJtdkeJfgrK+uxYInO+DQ/6UjXBbTta/VoATFaShlCcWHLEA8RaffDMQvhYzBL1oealNJMCR8FmJL7IpUDpfyT9VuRjjbjWiBVIbRtCiCjciT2lb53in3OYjt4kLyaoHNRA1AQgjOzzvqHD8CMwPpNrHavCO3sXjZWYQiArj8I5rk/yZqG8+XJcemx+Q5ASlBBVSy9AF6S6MfleoUr24+dQsFNdzmj9n3pjFXYpYMys5s8xBBZ0bUEijh+h7GUo9nqHBgb33nuLRzkEnWldEYknjjX24nywBrggAhsNaoDdcDYL4di+vDvhEoxCkn/A6HYAkzlhC5/XwS2WiQ4s+NWWiXGv3X+iO//2gZt2+xor4EA7cTKyhLosAwggsm9PqCzTd06jedOQmNFAro/Bb2tepGzHtsl61SrVYXkxmM2uZdn2uyaYSG6Q8435GEC+us79aMNCq+pWjZlfFBI3vC7xtKEEngVm0tX8rjy8vt2vLK370baXy5J8oynlPOUSuXLKGjNS8+9+8pyKrJCttKyEKJYejqsYFS1NyP9uHnKcMmAF0RYpHBMIViUNk3Vzjj3Yz2SVaJIxwKorEO91hSSHEcW7UI05XnBZcWNHV5iBAsiD9b7Imqb5fVd2Ga1zbYXQG4eAXEtRAo7k4F2sSMh4hspNr+7PEUeM= # DEPLOY_TEST_USER
+  - secure: nb+MCyVN1O/SAAqSxKH1O2BiL05oAtRX0gSj+61+9FDUoqlBP9XX6koK3EpOr+tX23TiX4ZedKS6QCQc+4utZcmCjap26DYPr5lOZ4bAFTaNTjX71usKRkpVEfS1zb5iGZYwQTowXia0AVT0J0aWUgvmS9RjqzBu7oIsp6JU557DNVO50ADueUn7mq1ouFr0e0L8bjHHO4u3XsCU7r1e3+Oc1VVmSO5XT6y8bsL2l9LnMXNNygdOs8XwszD3WA9DEY6ZCuGSLqzgJs1iIcen533X7hLPI8NYy8NgSAZ5s94A1H9V/SEx+lK2kwgdqZNq2YlZIgHqy/r2U7Wz+1gqccNZkDCx7mZ2ua+XG13rb65pb1eMTgnv4dtqTziXBsTKW9W3krtgcDZBTky5j423k7ZyLMdNfacr5sq9BGVv4Mpbt327R1nL8h/1Jz2cAN0CdNbKNX8WvfwJFVRPenePazw5GpxJzheeoxM1YzEUWoT8MiIgnBX5Xze2Hv8hcz8jmTE5uM4xetvHWCBFEHZhhTOr5htmTnMDyLdkSaYyIF9NaUSHFXbVqSJF2C09rsvd6ufQ0s+1Xr16qAirnjy363i+idPgKPseD6le3lWZq8IfdnYcTjpAdY7/B04iURTf2XTKWsHeZuTB5JGgw63AFAzM1yQU8QDJA/ysZb1Lvwk= # DEPLOY_TEST_HOST
+  - secure: StW47HLDg44DCCwAYU/46DSsAX/BCdbaRUQLT9TjI5jmBm8pjVsT3IUMo8MbSIP2ik7yS9Hre116aLc4DS8K10917RSqN0wT3ISrDY5ry+Qa4jfiQaVdc22n2T8BkZMzYMjGkXycEZ5exLFB2O7P3YTWgGJeme0xYf50E5l+BDKHiuae8jW3CgRlGT6LtJX/1orOx3O3/lSRfEMztMmwLX4TzJfspXtjC7mjWguB2n3eMapFxL5rj2+7SkSHF6otAZBj0/fn0ih4WbwUngRYBiPz43vESfzu58Yt2W9oxgez8sqb5rlUko7qkDbXaSV3ZbWqF1tXvrQw9R8bwmBrHL/NaiQ55AmqH6oopt2ZLmSG7atQDJkgxfVc2dUmvwuAgKprAc8OkQN+0AwXbOI1LxRSANsMY0CARDxEdlvcPYso5nfrlxFDDd+J0+vacrKIMZvw3w4fT5ye5cBB+sbLNvm5wastGbb9pz86kLZy5rY5MdSCghIul3GmDfGojuHdDd3hH2xv45M+QXM+YFFyYcWUvm9bTIot+2KpbDbK95QYNZ70iHs8OqJTRwWoc8lDsDhFH7KJTC+CHMjuNseqUrMQJn7eOsKrlGtJ7OO1rQwZiMihFdwO50yZroe6qTznAHNC3hUqY6VvXIDM3nVAxWkSWjqJ/v6TvMagid2xCpY= # DEPLOY_PROD_USER
+  - secure: l7I7/oDun/BPTXhJ2b8Dr4A65amO1UnXMEyPj3R9JxpQrE4u4cIGuXXRobD4qzYm0YpDcs4Tc2M8EqRcMlyaKwUt8HN9WlBKZ2l+WoeQZAPbXuiQvlgUJ2Nz+31h4i+6F/DeI70zCLvujIDA2d4iQiX8kvBA1dbm/HqmD4t6C2YbTkXXiCB4o8g6MqVaklVw034G5eLORI0lSIQFJ7DBQ2VMmgfnwl89naNZW9zVPGoskx5ZXO+wd9zuRYS/ehE5njjD6xp05azVO6QvSI7Rz3JGcbr4X0RAz69rr4sRYLJJO6WXd28I3GBhWgCkskfMFyGiAp0slNk8NRz940VXqy/6gvxvqfUR1zKVyWAqNoPqnIDQ46cVBzqA5PXOwWlxKIKIQXd31vPbqjOI0TR3FETrzRqYRWPbT8NUIGhStxo5Xfh07p+cEaOkwXCu+/VGkz4tdyDwTiSwP0KvB8dk38r/JEdULqtDQ9hgzMdgoJzzSKtXdd5uqzbj7SkM4i7TBqmPXbhQuVLJBlRpRAAlGf2m/yon+g4DjwAYX393nyXAANVm7GCbDqJLg4qml3U6mpGq3D/n65b7Fj3drh/Pjmkj5PNhLoqieaNVqtg+8JEYfU1/7vMfT4KORCbhHsI4j3MBNr4W4T/A532u0SsRej3RXDkuqZnw/aBU1QgwY4o= # DEPLOY_PROD_HOST
+  - secure: bneBf92DSYQlaWZZdEd4rcZ/jeuKf6pgV2yK+BuV/1GJamE2AegF0DjIJJF55qWWKAJCTny2a+XZB1F2TS0CEOWZ9vSrCmxaszue2AyPTeel9WyEd7mLhM+vab7z8mbnSg6zrkZnzhJR2/6lGIKhZ69hevNNIYcEI+Tlh9DbFZocpvDEzMyqpFaQPg6Hx/Pd+SKVF0CN1tcVZFPON8VlgoBMYf80kFsBrrrEdD8Y190ZAiSbu0JPNJXWNBR+2UkIRuOnugTbd6X8JgkYfX48T0taaTYJSwIKtUipd4VCL7D+cLhjnNsHEnPRs9eu8oGUIJ2zqxPvIBFX9wAZe+1VcyYHcm/lOTmGWxOUherlNeyN6Q7n7y76hlZRZqmHWFcF8RrB/ycHus+1jBX+Z+K1RSmjSZXkvcSV8EWPvTpZ5AX5hxqrY7Y/7XUBCH8NXU6NC99HMH66mGX6a4UsSNqOSUSSZlVeLIj9c+FtSEu761YynxSXv1knVmSSowSvE4JJm3x3trz7SWgc42FyYbXZ7mk2w4q9tkOyQdIVozbF0/azagPu/xO1bqBrYMOAj9aqs/gMn9YZ7rzUD6MKTb8SvhTf2OptY4s04x3wb2JwCkVeqvPRT1f3RNoSFDqWQ7yDD9D4OUyQxr/3KFnmY1B7Vxq/v/Vgy9XojyrZ/7H2kAw= # LOGZIO_TOKEN
