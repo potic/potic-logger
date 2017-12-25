@@ -1,0 +1,27 @@
+#!/usr/bin/env sh
+
+##############################################################################
+##
+##  Stop and kill currently running docker image, pull newest version and
+##  run it.
+##
+##############################################################################
+
+warn ( ) {
+    echo "$*"
+}
+
+warn "Currently running docker images"
+docker ps -a
+
+warn "Killing currently running docker image..."
+docker kill potic-logger; docker rm potic-logger
+
+warn "Pulling latest docker image..."
+docker pull potic/potic-logger:$TAG_TO_DEPLOY
+
+warn "Starting docker image..."
+docker run -dit --name potic-logger -e LOG_PATH=/mnt/logs -v /mnt/logs:/mnt/logs -p 40410:5050 potic/potic-logger:$TAG_TO_DEPLOY
+
+warn "Currently running docker images"
+docker ps -a
