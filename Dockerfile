@@ -8,7 +8,7 @@ RUN unzip /usr/src/potic-logger/potic-logger-*.zip -d /opt/ && ln -s /opt/potic-
 
 WORKDIR /opt/potic-logger
 
-EXPOSE 5050
+EXPOSE 8080
 ENV ENVIRONMENT_NAME test
 ENTRYPOINT [ "sh", "-c", "./bin/potic-logger --spring.profiles.active=$ENVIRONMENT_NAME" ]
 CMD []
