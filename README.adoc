@@ -1,7 +1,7 @@
 = potic-logger
 :linkattrs:
 
-Service for renewing auth tokens.
+Service for forwarding logs.
 
 == Travis job
 

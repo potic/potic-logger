@@ -50,10 +50,11 @@ class LogController {
             MDC.put('service', logRequest.service)
             MDC.put('env', logRequest.env)
 
-            cachedLoggers.get(logRequest.logger)."${logRequest.loglevel.toLowerCase()}"(logRequest.message)
+            cachedLoggers.get(logRequest.logger).info(logRequest.message)
 
             return new ResponseEntity(HttpStatus.OK)
         } catch (e) {
+            MDC.clear()
             log.error "POST request for / with token=${maskForLog(principal.token)} and body=${logRequest} failed: $e.message", e
             return new ResponseEntity(HttpStatus.INTERNAL_SERVER_ERROR)
         } finally {
