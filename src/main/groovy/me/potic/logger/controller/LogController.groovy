@@ -55,7 +55,11 @@ class LogController {
             return new ResponseEntity(HttpStatus.OK)
         } catch (e) {
             MDC.clear()
+            MDC.put('service', 'potic-logger')
+            MDC.put('env', "${System.getenv('ENVIRONMENT_NAME') ?: 'dev'}")
+
             log.error "POST request for / with token=${maskForLog(principal.token)} and body=${logRequest} failed: $e.message", e
+
             return new ResponseEntity(HttpStatus.INTERNAL_SERVER_ERROR)
         } finally {
             MDC.clear()

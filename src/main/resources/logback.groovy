@@ -23,8 +23,6 @@ appender('FILE', RollingFileAppender) {
 appender('LOGZIO', LogzioLogbackAppender) {
     token = System.getenv('LOGZIO_TOKEN') ?: new File('src/main/resources/logzio-dev.properties').text
     logzioUrl = 'https://listener.logz.io:8071'
-
-    additionalFields="service=potic-logger;env=${System.getenv('ENVIRONMENT_NAME') ?: 'dev'}"
 }
 
 def shutdownHook() {
