@@ -6,9 +6,12 @@ import com.google.common.cache.CacheLoader
 import com.google.common.cache.LoadingCache
 import groovy.util.logging.Slf4j
 import me.potic.logger.domain.LogRequest
+import me.potic.logger.domain.User
+import me.potic.logger.service.UserService
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.slf4j.MDC
+import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.*
@@ -23,6 +26,9 @@ import static me.potic.logger.util.Utils.maskForLog
 class LogController {
 
     LoadingCache<String, Logger> cachedLoggers
+
+    @Autowired
+    UserService userService
 
     @PostConstruct
     void initCachedLoggers() {
@@ -49,6 +55,9 @@ class LogController {
         try {
             MDC.put('service', logRequest.service)
             MDC.put('env', logRequest.env)
+
+            User user = userService.findUserByAuth0Token(principal.token)
+            MDC.put('user.id', user.id)
 
             cachedLoggers.get(logRequest.logger).info(logRequest.message)
 
